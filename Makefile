@@ -1,4 +1,4 @@
-dp:
+db:
 	docker-compose up -d
 
 down:
