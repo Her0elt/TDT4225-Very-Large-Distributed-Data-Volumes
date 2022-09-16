@@ -1,1 +1,6 @@
-print("hello world")
+from DbConnector import DbConnector
+
+
+db = DbConnector()
+
+
