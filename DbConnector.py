@@ -15,7 +15,7 @@ class DbConnector:
     """
 
     def __init__(self,
-                 HOST="localhost:3306",
+                 HOST="localhost",
                  DATABASE="sd",
                  USER="sd",
                  PASSWORD="password"):
