@@ -250,6 +250,10 @@ class DatabaseUtil:
     # Task 2.7
     def task_2_7_total_distance_walked_in_2008_by_112(self):
         def calculate_distance(positions: list[tuple[float, float]]):
+            """
+            Calculates distance in km through a list of geo-coordinates using the Haversine-function
+            Found at: https://stackoverflow.com/a/41438745
+            """
             results = []
             for i in range(1, len(positions)):
                 loc1 = positions[i - 1]
@@ -277,7 +281,15 @@ class DatabaseUtil:
             return (sum(results) / 1000)  # Converting from m to km
 
         query = """
-                SELECT t.id, t.lat, t.lon, t.activity_id, a.user_id FROM track_points t INNER JOIN activities a ON (a.id = t.activity_id AND a.transportation_mode = 'walk' AND a.user_id = '112' AND t.date_time between '2008-01-01 00:00:00' and '2008-12-31 23:59:59');
+                SELECT t.id, t.lat, t.lon, t.activity_id, a.user_id
+                FROM track_points t
+                INNER JOIN activities a
+                ON (
+                  a.id = t.activity_id
+                  AND a.transportation_mode = 'walk'
+                  AND a.user_id = '112'
+                  AND t.date_time between '2008-01-01 00:00:00' and '2008-12-31 23:59:59'
+                );
                 """
 
         self.cursor.execute(query)
@@ -285,49 +297,78 @@ class DatabaseUtil:
 
         activities = groupby(rows, lambda row: row[3])
 
-        distances = list(map(lambda activity: calculate_distance(
-            list(map(lambda points: (points[1], points[2]), activity[1]))), activities))
+        total_distance = 0
+        for activity in activities:
+            points = activity[1]
+            total_distance += calculate_distance(list(map(lambda point: (point[1], point[2]), points)))
 
         print("Task 2.7")
-        print(f"Total distance by user 112 in 2008: {sum(distances)} km")
+        print(f"Total distance by user 112 in 2008: {total_distance} km")
 
-    def task_2_8_top_20_users_with_most_altitude_meters(self):
-        # query = """
-        #         SELECT u.id, t.activity_id, MAX(t.altitude) - MIN(t.altitude) as altitude_difference
-        #         FROM track_points t
-        #         LEFT JOIN activities a ON (a.id = t.activity_id)
-        #         LEFT JOIN users u on (u.id = a.user_id)
-        #         WHERE t.altitude >= 0
-        #         GROUP BY t.activity_id
-        #         """
-
+    def task_2_8_top_20_users_with_most_altitude_meters(self):      
         query = """
-                SELECT u.id, SUM(alt.alt_difference) * 0.3048 as altitude_metres
-                FROM users u
-                LEFT JOIN activities a ON (u.id = a.user_id)
-                JOIN (
-                  SELECT t.activity_id as alt_id, MAX(t.altitude) - MIN(t.altitude) as alt_difference
-                  FROM track_points t
-                  WHERE t.altitude >= 0
-                  GROUP BY t.activity_id
-                ) AS alt ON (alt.alt_id = a.id)
-                GROUP BY u.id
+                SELECT a.user_id, t.activity_id, t.altitude  * 0.3048, t.date_time FROM track_points t 
+                JOIN activities a 
+                ON t.activity_id = a.id
+                WHERE t.altitude != -777
+                ORDER BY a.user_id, t.activity_id, t.date_time
                 """
 
         print("Task 2.8")
-        self._run_query(query)
+        self.cursor.execute(query)
+        rows = self.cursor.fetchall()
+
+        usersAltitudes = {}
+        for i in range(len(rows) - 1):
+            trackPoint = rows[i]
+            nextTrackPoint = rows[i + 1]
+            sameActivityId = trackPoint[1] == nextTrackPoint[1]
+            sameUser = trackPoint[0] == nextTrackPoint[0]
+            if sameActivityId and sameUser:
+                nextTrackPointHasHigherAltitude = trackPoint[2] < nextTrackPoint[2]
+                if nextTrackPointHasHigherAltitude:
+                    try:
+                        usersAltitudes[trackPoint[0]] += (nextTrackPoint[2] - trackPoint[2])
+                    except:
+                        usersAltitudes[trackPoint[0]] = (nextTrackPoint[2] - trackPoint[2])
+
+        results = sorted(usersAltitudes.items(), key=lambda item: item[1], reverse=True)
+
+        print(tabulate(results[:20], headers=("UserId", "Altitude meters gained")))
 
     def task_2_9_invalid_activities_per_user(self):
         print("Task 2.9")
         query = """
-                SELECT MAX(MINUTE(TIMEDIFF(LAG(t.date_time), t.date_time))) as time_diff
-                FROM track_points
-                LEFT JOIN activities a ON (a.id = t.activity_id)
-                WHERE time_diff > 5
-                GROUP BY a.id
-                ORDER BY t.date_time
+                SELECT t.activity_id, t.date_time, a.user_id 
+                FROM track_points t JOIN activities a 
+                ON t.activity_id = a.id 
+                ORDER BY a.user_id, t.activity_id, t.date_time
                 """
-        self._run_query(query)
+        self.cursor.execute(query)
+        rows = self.cursor.fetchall()
+
+        invalidActivities = set()
+        usersInvalidActivities = {}
+        for i in range(len(rows) - 1):
+            trackPoint = rows[i]
+            if trackPoint[0] in invalidActivities:
+                # This track-point's activity have already been marked as invalid
+                continue
+            nextTrackPoint = rows[i + 1]
+            sameActivityId = trackPoint[0] == nextTrackPoint[0]
+            sameUser = trackPoint[2] == nextTrackPoint[2]
+            if sameActivityId and sameUser:
+                trackpointsDiffInSeconds = (nextTrackPoint[1] - trackPoint[1]).seconds
+                if trackpointsDiffInSeconds >= 5 * 60: # 5 minutes
+                    invalidActivities.add(trackPoint[0])
+                    if usersInvalidActivities[trackPoint[2]]:
+                        usersInvalidActivities[trackPoint[2]] += 1
+                    else:
+                        usersInvalidActivities[trackPoint[2]] = 1
+
+        results = sorted(usersInvalidActivities.items(), key=lambda x: x[1], reverse=True)
+
+        print(tabulate(results[:20], headers=("UserId", "Invalid activities")))
 
     def task_2_10_users_tracked_forbidden_city(self):
         print("Task 2.10")
@@ -339,34 +380,3 @@ class DatabaseUtil:
                 WHERE t.lat BETWEEN 39.916 AND 39.917 AND t.lon BETWEEN 116.397 AND 116.398
                 """
         self._run_query(query)
-
-    # def insert_data(self, table_name):
-    #     names = ['Bobby', 'Mc', 'McSmack', 'Board']
-    #     for name in names:
-    #         # Take note that the name is wrapped in '' --> '%s' because it is a string,
-    #         # while an int would be %s etc
-    #         query = "INSERT INTO %s (name) VALUES ('%s')"
-    #         self.cursor.execute(query % (table_name, name))
-    #     self.db_connection.commit()
-
-    # def fetch_data(self, table_name):
-    #     query = "SELECT * FROM %s"
-    #     self.cursor.execute(query % table_name)
-    #     rows = self.cursor.fetchall()
-    #     print("Data from table %s, raw format:" % table_name)
-    #     print(rows)
-    #     # Using tabulate to show the table in a nice way
-    #     print("Data from table %s, tabulated:" % table_name)
-    #     print(tabulate(rows, headers=self.cursor.column_names))
-    #     return rows
-
-    # def drop_table(self, table_name):
-    #     print("Dropping table %s..." % table_name)
-    #     query = "DROP TABLE %s"
-    #     self.cursor.execute(query % table_name)
-
-    # def show_tables(self):
-    #     self.cursor.execute("SHOW TABLES")
-    #     rows = self.cursor.fetchall()
-    #     print(tabulate(rows, headers=self.cursor.column_names))
-    #     self.cursor.close()

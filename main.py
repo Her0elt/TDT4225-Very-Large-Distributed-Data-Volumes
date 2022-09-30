@@ -20,7 +20,7 @@ def main():
         program.task_2_6_b_year_with_longest_activities()
         program.task_2_7_total_distance_walked_in_2008_by_112()
         program.task_2_8_top_20_users_with_most_altitude_meters()
-        # program.task_2_9_invalid_activities_per_user()
+        program.task_2_9_invalid_activities_per_user()
         program.task_2_10_users_tracked_forbidden_city()
         if program:
             program.connection.close_connection()
