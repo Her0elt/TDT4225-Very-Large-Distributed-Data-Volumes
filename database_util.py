@@ -300,12 +300,13 @@ class DatabaseUtil:
         total_distance = 0
         for activity in activities:
             points = activity[1]
-            total_distance += calculate_distance(list(map(lambda point: (point[1], point[2]), points)))
+            total_distance += calculate_distance(
+                list(map(lambda point: (point[1], point[2]), points)))
 
         print("Task 2.7")
         print(f"Total distance by user 112 in 2008: {total_distance} km")
 
-    def task_2_8_top_20_users_with_most_altitude_meters(self):      
+    def task_2_8_top_20_users_with_most_altitude_meters(self):
         query = """
                 SELECT a.user_id, t.activity_id, t.altitude  * 0.3048, t.date_time FROM track_points t 
                 JOIN activities a 
@@ -328,13 +329,17 @@ class DatabaseUtil:
                 nextTrackPointHasHigherAltitude = trackPoint[2] < nextTrackPoint[2]
                 if nextTrackPointHasHigherAltitude:
                     try:
-                        usersAltitudes[trackPoint[0]] += (nextTrackPoint[2] - trackPoint[2])
+                        usersAltitudes[trackPoint[0]
+                                       ] += (nextTrackPoint[2] - trackPoint[2])
                     except:
-                        usersAltitudes[trackPoint[0]] = (nextTrackPoint[2] - trackPoint[2])
+                        usersAltitudes[trackPoint[0]] = (
+                            nextTrackPoint[2] - trackPoint[2])
 
-        results = sorted(usersAltitudes.items(), key=lambda item: item[1], reverse=True)
+        results = sorted(usersAltitudes.items(),
+                         key=lambda item: item[1], reverse=True)
 
-        print(tabulate(results[:20], headers=("UserId", "Altitude meters gained")))
+        print(tabulate(results[:20], headers=(
+            "UserId", "Altitude meters gained")))
 
     def task_2_9_invalid_activities_per_user(self):
         print("Task 2.9")
@@ -358,15 +363,17 @@ class DatabaseUtil:
             sameActivityId = trackPoint[0] == nextTrackPoint[0]
             sameUser = trackPoint[2] == nextTrackPoint[2]
             if sameActivityId and sameUser:
-                trackpointsDiffInSeconds = (nextTrackPoint[1] - trackPoint[1]).seconds
-                if trackpointsDiffInSeconds >= 5 * 60: # 5 minutes
+                trackpointsDiffInSeconds = (
+                    nextTrackPoint[1] - trackPoint[1]).seconds
+                if trackpointsDiffInSeconds >= 5 * 60:  # 5 minutes
                     invalidActivities.add(trackPoint[0])
                     if trackPoint[2] in usersInvalidActivities:
                         usersInvalidActivities[trackPoint[2]] += 1
                     else:
                         usersInvalidActivities[trackPoint[2]] = 1
 
-        results = sorted(usersInvalidActivities.items(), key=lambda x: x[1], reverse=True)
+        results = sorted(usersInvalidActivities.items(),
+                         key=lambda x: x[1], reverse=True)
 
         print(tabulate(results[:20], headers=("UserId", "Invalid activities")))
 
@@ -384,16 +391,14 @@ class DatabaseUtil:
     def task_2_11_users_most_used_transportation_mode(self):
         print("Task 2.11")
         query = """
-                SELECT u.id, COUNT(a.user_id)
+                SELECT u.id, COUNT(act.transportation_mode) as most_used_transportation_mode
                 FROM users u
-                LEFT JOIN (
+                JOIN (
                   SELECT a.user_id, a.transportation_mode
                   FROM activities a
                   WHERE a.transportation_mode != 'None'
-                  GROUP BY a.user_id, a.transportation_mode
-                  HAVING COUNT(a.transportation_mode) >= ALL(
-                    SELECT COUNT(*) FROM activities a2 WHERE a2.user_id = a.user_id GROUP BY a2.transportation_mode
-                  )
-                ) as a on a.user_id = u.id
+                  GROUP BY a.transportation_mode, a.user_id
+                ) as act on act.user_id = u.id
+                GROUP BY u.id
                 """
         self._run_query(query)
