@@ -18,7 +18,7 @@ class DatabaseUtil:
     def create_user_table(self):
         query = """CREATE TABLE IF NOT EXISTS users (
                    id VARCHAR(225) NOT NULL PRIMARY KEY,
-                   has_labels BOOL NOT NULL DEFAULT false
+                   has_labels BOOLEAN NOT NULL DEFAULT FALSE
                    )
                 """
         return query
@@ -361,7 +361,7 @@ class DatabaseUtil:
                 trackpointsDiffInSeconds = (nextTrackPoint[1] - trackPoint[1]).seconds
                 if trackpointsDiffInSeconds >= 5 * 60: # 5 minutes
                     invalidActivities.add(trackPoint[0])
-                    if usersInvalidActivities[trackPoint[2]]:
+                    if trackPoint[2] in usersInvalidActivities:
                         usersInvalidActivities[trackPoint[2]] += 1
                     else:
                         usersInvalidActivities[trackPoint[2]] = 1
@@ -378,5 +378,22 @@ class DatabaseUtil:
                 LEFT JOIN activities a ON (u.id = a.user_id)
                 LEFT JOIN track_points t ON (a.id = t.activity_id)
                 WHERE t.lat BETWEEN 39.916 AND 39.917 AND t.lon BETWEEN 116.397 AND 116.398
+                """
+        self._run_query(query)
+
+    def task_2_11_users_most_used_transportation_mode(self):
+        print("Task 2.11")
+        query = """
+                SELECT u.id, COUNT(a.user_id)
+                FROM users u
+                LEFT JOIN (
+                  SELECT a.user_id, a.transportation_mode
+                  FROM activities a
+                  WHERE a.transportation_mode != 'None'
+                  GROUP BY a.user_id, a.transportation_mode
+                  HAVING COUNT(a.transportation_mode) >= ALL(
+                    SELECT COUNT(*) FROM activities a2 WHERE a2.user_id = a.user_id GROUP BY a2.transportation_mode
+                  )
+                ) as a on a.user_id = u.id
                 """
         self._run_query(query)
