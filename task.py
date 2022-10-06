@@ -109,7 +109,7 @@ class Task(DatabaseUtil):
         As the specific implementations are up to the group it was considered the most intuitive option
         """
         query = """
-                SELECT YEAR(a.start_date_time) as start_year, SUM(HOUR(TIMEDIFF(a.start_date_time, a.end_date_time))) as sum_time
+                SELECT YEAR(a.start_date_time) as start_year, ROUND(SUM(TIME_TO_SEC(TIMEDIFF(a.end_date_time, a.start_date_time))) / 3600) as sum_time
                 FROM activities as a
                 GROUP BY start_year
                 ORDER BY sum_time DESC
@@ -138,16 +138,16 @@ class Task(DatabaseUtil):
             return result
 
         query = """
-        
                 SELECT t.id, t.lat, t.lon, t.activity_id, a.user_id
                 FROM track_points t
-                INNER JOIN activities a
+                JOIN activities a
                 ON (
                   a.id = t.activity_id
                   AND a.transportation_mode = 'walk'
                   AND a.user_id = '112'
                   AND t.date_time between '2008-01-01 00:00:00' and '2008-12-31 23:59:59'
                 );
+                ORDER BY t.date_time
         """
 
         self.cursor.execute(query)
