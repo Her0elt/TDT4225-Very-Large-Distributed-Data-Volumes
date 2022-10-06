@@ -146,7 +146,7 @@ class Task(DatabaseUtil):
                   AND a.transportation_mode = 'walk'
                   AND a.user_id = '112'
                   AND t.date_time between '2008-01-01 00:00:00' and '2008-12-31 23:59:59'
-                );
+                )
                 ORDER BY t.date_time
         """
 
