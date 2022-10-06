@@ -31,7 +31,7 @@ class Insert(DatabaseUtil):
     def _insert_activity_query(
         self, id, transportation_mode, start_date_time, end_date_time, user_id
     ):
-        query = """INSERT INTO activities (id, transportation_mode, start_date_time, end_date_time, user_id) 
+        query = """INSERT INTO activities (id, transportation_mode, start_date_time, end_date_time, user_id)
                     VALUES ('%s', '%s', '%s', '%s', '%s')"""
 
         return query % (
@@ -43,7 +43,7 @@ class Insert(DatabaseUtil):
         )
 
     def _insert_track_point_query(self):
-        return """INSERT INTO track_points (lat, lon, altitude, date_time, activity_id) 
+        return """INSERT INTO track_points (lat, lon, altitude, date_time, activity_id)
                     VALUES (%s, %s, %s, %s, %s)"""
 
     def create_activity(self, user, file_path):
