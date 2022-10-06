@@ -6,7 +6,6 @@ from haversine import haversine, Unit
 
 
 class Task(DatabaseUtil):
-
     def _run_query(self, query: str):
         self.cursor.execute(query)
         rows = self.cursor.fetchall()
@@ -29,7 +28,7 @@ class Task(DatabaseUtil):
 
     def task_2_2_average_activities_per_user(self):
         """
-        Find the average amount of activites per user by dividing the number of entries in activities by entries in users 
+        Find the average amount of activites per user by dividing the number of entries in activities by entries in users
         """
         query = """
                 select (select count(*) from activities) / (select count(*) from users) AS divide from dual;
@@ -40,7 +39,7 @@ class Task(DatabaseUtil):
 
     def task_2_3_top_20_users_with_most_activities(self):
         """
-        Find the top 20 users by left joining users on activities 
+        Find the top 20 users by left joining users on activities
         By grouping on the user id, we can count entries as number of activities
         Limiting by 20 and ordering gives us the top 20 users
         """
@@ -88,7 +87,7 @@ class Task(DatabaseUtil):
         In this task we consider only the year of the start_date_time
         It is possible for a task to start in one year, and end in the next, however the group limits the year to only the start time
         This is considered appropriate, as the possibility for overlapping activities, would make the sum of counts of activities for each year,
-        greater than the total registered activities. 
+        greater than the total registered activities.
         """
         query = """
                 SELECT YEAR(start_date_time) as start_year, COUNT(*) as year_count
@@ -133,7 +132,11 @@ class Task(DatabaseUtil):
             for i in range(1, len(positions)):
                 track_point = positions[i - 1]
                 next_track_point = positions[i]
-                result += haversine((track_point[0], track_point[1]), (next_track_point[0], next_track_point[1]), unit=Unit.KILOMETERS)
+                result += haversine(
+                    (track_point[0], track_point[1]),
+                    (next_track_point[0], next_track_point[1]),
+                    unit=Unit.KILOMETERS,
+                )
 
             return result
 
@@ -213,7 +216,7 @@ class Task(DatabaseUtil):
         to traverse in correct order. For each track-point, we check if there is more then
         5 minutes to the next track-point. If so, the activity is added to a set of invalid activities
         if not already there to avoid double-registration of invalid activities. The count of invalid activities
-        per user is also increased. Finally the users are sorted 
+        per user is also increased. Finally the users are sorted
         """
         print("Task 2.9")
         query = """
@@ -253,7 +256,7 @@ class Task(DatabaseUtil):
     def task_2_10_users_tracked_forbidden_city(self):
         """
         Since we do not get exact matches on geo location, we consider the Forbidden City to be between the nearest possible geolocations
-        This is a consequence of the track_points having more specific geo locations than the Forbidden City 
+        This is a consequence of the track_points having more specific geo locations than the Forbidden City
         The disctinct users with activities registered in the between clause is listed
         """
         print("Task 2.10")
