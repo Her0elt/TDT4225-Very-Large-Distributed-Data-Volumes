@@ -5,14 +5,24 @@ from setup import Setup
 from insert import Insert
 from task import Task
 
+
 def main():
     try:
         arguments = sys.argv
         if not len(arguments) > 1:
             print("Supply an argument with what to do:")
-            print(tabulate([["setup", "Create tables"], ["insert", "Insert data to tables"], ["tasks", "Run tasks"]], headers=['Argument', 'Description']))
+            print(
+                tabulate(
+                    [
+                        ["setup", "Create tables"],
+                        ["insert", "Insert data to tables"],
+                        ["tasks", "Run tasks"],
+                    ],
+                    headers=["Argument", "Description"],
+                )
+            )
             return
-        
+
         todo = sys.argv[1]
 
         if todo == "setup":
@@ -29,7 +39,7 @@ def main():
             insert.insert_trajectories()
 
             insert.cleanup()
-        
+
         if todo == "tasks":
             tasks = Task()
 

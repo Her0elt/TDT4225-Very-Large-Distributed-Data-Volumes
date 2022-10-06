@@ -2,7 +2,6 @@ from database_util import DatabaseUtil
 
 
 class Setup(DatabaseUtil):
-
     def create_user_table(self):
         query = """CREATE TABLE IF NOT EXISTS users (
                    id VARCHAR(225) NOT NULL PRIMARY KEY,
