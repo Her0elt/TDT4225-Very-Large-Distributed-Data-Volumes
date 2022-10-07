@@ -115,7 +115,7 @@ class Insert(DatabaseUtil):
         return list(
             map(
                 lambda line: Trajectory(line).to_tuple(activity_id),
-                trajectory_lines[6:-2],
+                trajectory_lines[6:],
             )
         )
 
