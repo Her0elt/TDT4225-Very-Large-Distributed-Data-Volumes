@@ -1,7 +1,6 @@
 from itertools import groupby
 from database_util import DatabaseUtil
 from tabulate import tabulate
-import math
 from haversine import haversine, Unit
 
 
